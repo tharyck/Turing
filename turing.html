@@ -8,42 +8,12 @@
    Turing machine simulator
   </title>
   <script type="text/javascript" defer="defer" src="jquery-1.11.1.min.js"></script>
-  <!--[if lte IE 9]>
-   <script type="text/javascript" src="polyfills.js"></script>
-   <script type="text/javascript" src="json2.js"></script>
-  <![endif]-->
-  <!--[if lt IE 8]>
-   <link href="ie-fixes.css" rel="stylesheet" type="text/css">
-  <![endif]-->  <!-- Conditional comments for old IE versions. Adjust or disable line highlighting and load Javscript polyfills if needed for old IE versions. !-->
   <script type="text/javascript" defer="defer" src="jsturing.js"></script>
  </head>
 
  <body onload="OnLoad();">
   <div id="Header">
    <h1>Turing machine simulator</h1>
-   <div class="backlinks">
-    [<a href="http://morphett.info/">Back to home page</a>]
-   </div>
-   <div id="IntroText">
-    This is a <a href="http://en.wikipedia.org/wiki/Turing_machine">Turing machine</a> simulator.
-    To use it:<br>
-    <ol>
-     <li>
-      <a href="#LoadMenu" onclick="$('#LoadMenu').slideDown();">Load one of the example programs</a>, or write your own in the Turing machine program area.  See <a href="#SyntaxInfo">below for syntax</a>.
-     </li>
-     <li>
-      Enter something in the 'Input' area - this will be written on the tape initially as input to the machine. Click 'Reset' to initialise the machine.
-     </li>
-     <li>
-      Click on 'Run' to start the Turing machine and run it until it halts (if ever).
-      Click on 'Pause' to interrupt the Turing machine while it is running.
-      Alternately, click 'Step' to run a single step of the Turing machine.
-     </li>
-     <li>
-      Click 'Reset' to restore the Turing machine to its initial state so it can be run again.
-     </li>
-    </ol>
-   </div>
   </div>
   <div id="Machine">
    <div id="MachineTapeContainer">
@@ -173,54 +143,6 @@
    </div> <!-- div MachineLowerSection !-->
 
   </div> <!-- div Machine !-->
-  <div id="SyntaxInfo">Syntax:
-   <ul>
-    <li>Each line should contain one tuple of the form '<code>&lt;current state&gt; &lt;current symbol&gt; &lt;new symbol&gt; &lt;direction&gt; &lt;new state&gt;</code>'.</li>
-    <li>You can use any number or word for <code>&lt;current state&gt;</code> and <code>&lt;new state&gt;</code>, eg. <code>10, a, state1</code>. State labels are case-sensitive.</li>
-    <li>You can use any character for <code>&lt;current symbol&gt;</code> and <code>&lt;new symbol&gt;</code>, or '<code>_</code>' to represent blank (space). Symbols are case-sensitive.</li>
-    <li><code>&lt;direction&gt;</code> should be '<code>l</code>', '<code>r</code>' or '<code>*</code>', denoting 'move left', 'move right' or 'do not move', respectively.</li>
-    <li>Anything after a '<code>;</code>' is a comment and is ignored.</li>
-    <li>The machine halts when it reaches any state starting with '<code>halt</code>', eg. <code>halt, halt-accept</code>.</li>
-   </ul>
-   Also:
-   <ul>
-    <li>'<code>*</code>' can be used as a wildcard in <code>&lt;current symbol&gt;</code> or <code>&lt;current state&gt;</code> to match any character or state.</li>
-    <li>'<code>*</code>' can be used in <code>&lt;new symbol&gt;</code> or <code>&lt;new state&gt;</code> to mean 'no change'.</li>
-    <li>'<code>!</code>' can be used at the end of a line to set a breakpoint, eg '<code>1 a b r 2 !</code>'. The machine will automatically pause after executing this line.</li>
-    <li>You can specify the starting position for the head using '<code>*</code>' in the initial input.</li>
-   </ul>
-  </div>
-  <div id="AboutMenu">
-   <div id="AboutItemTech" class="AboutItem"><a href="javascript:" onclick="AboutMenuClicked('Tech');">Technical details</a></div>
-   -
-   <div id="AboutItemMail" class="AboutItem"><a href="javascript:" onclick="AboutMenuClicked('Mail');">Mailing list</a></div>
-   -
-   <div id="AboutItemCopying" class="AboutItem"><a href="javascript:" onclick="AboutMenuClicked('Copying');">Copying</a></div>
-   -
-   <div id="AboutItemOld" class="AboutItem"><a href="javascript:" onclick="AboutMenuClicked('Old');">Previous version</a></div>
-   -
-   <div id="AboutItemContact" class="AboutItem"><a href="javascript:" onclick="AboutMenuClicked('Contact');">Feedback</a></div>
-   <div id="AboutContentContainer">
-    <div id="AboutContentTech" class="AboutContent">
-     The Turing machine simulator is written in HTML/Javascript, and uses <a href="http://jquery.com">jQuery</a>.  Saved machines are stored as anonymous GISTs on <a href="https://gist.github.com/">GitHub's GIST</a> service.  You can browse the code <a href="https://github.com/awmorp/jsturing">here on GitHub</a>.
-    </div>
-    <div id="AboutContentMail" class="AboutContent">
-     <a href="http://www.freelists.org/list/jsturing">Subscribe to the mailing list</a> for occasional updates and news about the Turing machine simulator (typically 1-2 emails per year).
-    </div>
-    <div id="AboutContentCopying" class="AboutContent">
-     Source code for this simulator is <a href="https://github.com/awmorp/jsturing">available on GitHub</a>.  You are welcome to download, copy, or adapt the code to your own needs.  If you are doing something interesting with it, I'd be happy to hear from you about it.
-    </div>
-    <div id="AboutContentOld" class="AboutContent">
-     The previous version of the Turing machine simulator is <a href="old/turing.html">still available here</a>.
-    </div>
-    <div id="AboutContentContact" class="AboutContent">
-     Please send any bug reports, feedback, suggestions, etc. to <a href="http://morphett.info/">Anthony Morphett</a>, awmorp @ gmail.com
-    </div>
-   </div>
-  </div>
-  <div class="Signature">
-   -- <a href="http://morphett.info/">Anthony Morphett</a> - awmorp @ gmail.com
-  </div>
   <div id="debugOuter" class="DebugClass">
    Debug: <button id="ClearDebugButton" onclick="ClearDebug();">clear</button>
    <pre id="debug">
