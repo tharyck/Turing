@@ -37,7 +37,6 @@ function Step()
 	
 	bIsReset = false;
 	if( sState.substring(0,4).toLowerCase() == "halt" ) {
-		/* debug( 1, "Warning: Step() called while in halt state" ); */
 		EnableControls( false, false, true, true, true );
 		return( false );
 	}
@@ -156,16 +155,6 @@ function RunStep()
 		StopTimer();
 	}
 }
-
-/* StopTimer(): Deactivate the run timer. */
-function StopTimer()
-{
-	if( hRunTimer != null ) {
-		window.clearInterval( hRunTimer );
-		hRunTimer = null;
-	}
-}
-
 
 /* Reset( ): re-initialise the TM */
 function Reset()
