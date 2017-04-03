@@ -1,20 +1,20 @@
 var nDebugLevel = 0;
 
-var bFullSpeed = false;
-
-var bIsReset = false;
 var sFita = "";
 var nTapeOffset = 0;
 var nPosicaoCabeca = 0;
 var sEstados = "0";
+
 var nPassos = 0;
-var nVariante = 0;
-var hRunTimer = null;
+
 var aProgram = new Object();
-var contador = 0;
+
+//Habilita e desabilita botoes de controle
 Controles( true, true, false, true, false);
 
+//quantidade de Passos que podem ser voltados
 var nMaxUndo = 0;
+
 var aUndoList = [];
 var nTextareaLines = -1;
 var oTextarea;
@@ -23,22 +23,20 @@ var oNextLineMarker = $("<div class='NextLineMarker'>Next<div class='NextLineMar
 var oPrevLineMarker = $("<div class='PrevLineMarker'>Prev<div class='PrevLineMarkerEnd'></div></div>");
 var oPrevInstruction = null;
 
-var sPreviousStatusMsg = "";
-
+//Passos 
 function Step()
 {
-	if(contador<=0){
+	if(nPassos){
 		Controles( false, false, true, true, false);
 	}else{
 		if( bIsDirty) Compile();
 		
-		bIsReset = false;
 		if( sEstados.substring(0,4).toLowerCase() == "halt" ) {
 			Controles( false, false, true, true, true );
 			return( false );
 		}
 	}
-	var NovoEstado, NovoSimbolo, nAction, nLinhas;
+	var NovoEstado, NovoSimbolo, nAcoes, nLinhas;
 
 	var sSimboloDaCabeca = GetTapeSymbol( nPosicaoCabeca );
 	
@@ -46,8 +44,6 @@ function Step()
 	var OInstrucao;
 	if( aInstructions.length == 0 ) {
     OInstrucao = null;
-	} else if( nVariante == 2 ) {
-    OInstrucao = aInstructions[Math.floor(Math.random()*aInstructions.length)];
 	} else {
     OInstrucao = aInstructions[0];
 	}
@@ -55,16 +51,16 @@ function Step()
 	if( OInstrucao != null ) {
 		NovoEstado = (OInstrucao.newState == "*" ? sEstados : OInstrucao.newState);
 		NovoSimbolo = (OInstrucao.newSymbol == "*" ? sSimboloDaCabeca : OInstrucao.newSymbol);
-		nAction = (OInstrucao.action.toLowerCase() == "r" ? 1 : (OInstrucao.action.toLowerCase() == "l" ? -1 : 0));
-    if( nVariante == 1 && nPosicaoCabeca == 0 && nAction == -1 ) {
-      nAction = 0;
+		nAcoes = (OInstrucao.action.toLowerCase() == "r" ? 1 : (OInstrucao.action.toLowerCase() == "l" ? -1 : 0));
+    if(nPosicaoCabeca == 0 && nAcoes == -1 ) {
+      nAcoes = 0;
     }
 		nLinhas = OInstrucao.sourceLineNumber;
 	} else {
 		debug( 1, "Warning: no instruction found for state '" + sEstados + "' symbol '" + sSimboloDaCabeca + "'; halting" );
 		NovoEstado = "halt";
 		NovoSimbolo = sSimboloDaCabeca;
-		nAction = 0;
+		nAcoes = 0;
 		nLinhas = -1;
 	}
 	
@@ -75,14 +71,14 @@ function Step()
 	
 	SetTapeSymbol( nPosicaoCabeca, NovoSimbolo );
 	sEstados = NovoEstado;
-	nPosicaoCabeca += nAction;
+	nPosicaoCabeca += nAcoes;
 	
 	nPassos++;
 	nMaxUndo=nPassos+1;
 	
 	oPrevInstruction = OInstrucao;
 	
-	debug( 4, "Step() finished. New tape: '" + sFita + "'  new state: '" + sEstados + "'  action: " + nAction + "  line number: " + nLinhas  );
+	debug( 4, "Step() finished. New tape: '" + sFita + "'  new state: '" + sEstados + "'  action: " + nAcoes + "  line number: " + nLinhas  );
 	UpdateInterface();
 	
 	if( NovoEstado.substring(0,4).toLowerCase() == "halt" ) {
@@ -119,20 +115,11 @@ function Undo()
 }
 
 function Run()
-{
-  var bContinue = true;
-  if( bFullSpeed ) {
-    for( var i = 0; bContinue && i < 25; i++ ) {
-      bContinue = Step();
-    }
-    if( bContinue ) hRunTimer = window.setTimeout( Run, 10 );
-    else UpdateInterface();
-  } else {
-    if( Step() ) {
-      hRunTimer = window.setTimeout( Run, 50 );
+{    if( Step() ) {
+      window.setTimeout( Run, 50 );
     }
   }
-}
+
 
 function Reset()
 {
@@ -151,13 +138,8 @@ function Reset()
 	if( !sInitialState || sInitialState == "" ) sInitialState = "0";
 	sEstados = sInitialState;
 	
-  var dropdown = $("#MachineVariant")[0];
-  nVariante = Number(dropdown.options[dropdown.selectedIndex].value);
-  SetupVariantCSS();
-	
 	nPassos = 0;
 	nMaxUndo=nPassos+1;
-	bIsReset = true;
 	
 	Compile();
 	oPrevInstruction = null;
@@ -207,7 +189,7 @@ function Compile()
 			if( aProgram[OTupla.currentState][OTupla.currentSymbol] == null ) {
         aProgram[OTupla.currentState][OTupla.currentSymbol] = [];
 			}
-			if( aProgram[OTupla.currentState][OTupla.currentSymbol].length > 0 && nVariante != 2 ) {
+			if( aProgram[OTupla.currentState][OTupla.currentSymbol].length > 0 ) {
         debug( 1, "Warning: multiple definitions for state '" + OTupla.currentState + "' symbol '" + OTupla.currentSymbol + "' on lines " + (aProgram[OTupla.currentState][OTupla.currentSymbol][0].sourceLineNumber+1) + " and " + (i+1) );
         SetSyntaxMessage( "Warning: Multiple definitions for state '" + OTupla.currentState + "' symbol '" + OTupla.currentSymbol + "' on lines " + (aProgram[OTupla.currentState][OTupla.currentSymbol][0].sourceLineNumber+1) + " and " + (i+1) );
         SetErrorLine( i );
@@ -469,37 +451,28 @@ function EnableUndoButton(bUndo)
 
 function StepButton()
 {
-	if(contador>0){
+	if(nPassos>0){
 	Step();
 	EnableUndoButton(true);
 	}else{
 		ResetButton();
-		contador++;
 	}
 }
 
+
+//botao de inicio. reseta a maquina (volta a maquina ao estado inicial, reseta os controles e inicia a maquina)
 function RunButton()
 {
 	ResetButton();
-	/* Make sure that the step interval is up-to-date */
 	Controles( false, false, false, false, false );
 	Run();
 }
 
+//botao de reset. reseta a maquina e os controles
 function ResetButton()
 {
-	contador=0;
 	Reset();
 	Controles( true, true, false, true, false );
-}
-
-function SetupVariantCSS()
-{
-  if( nVariante == 1 ) {
-    $("#LeftTape").addClass( "OneDirectionalTape" );
-  } else {
-    $("#LeftTape").removeClass( "OneDirectionalTape" );
-  }
 }
 
 function ShowResetMsg(b)
