@@ -7,10 +7,10 @@ body {
 }
 
 #Machine {
-  border: 2px solid #ff6666;
+  border: 2px solid #D3D3D3;
 /*  background-color: #dfdfda; */
 /*  background-color: #ffe1e1; */
-  background-color: #ffefda;
+  background-color: #eeeeee;
   padding-top: 0.5em;
   padding-bottom: 0.25em;
   padding-left: 0.5em;
@@ -50,7 +50,7 @@ body {
 }
 
 #MachineTape {
-  background-color: #eee8aa;
+  background-color: white;
   padding-top: 10px;
   padding-left: 0px;
   font-size: x-large;
@@ -130,7 +130,7 @@ body {
   margin-right: 0;
 /*  text-align: center; */
   font-family: "Courier New", courier;
-  background-color: #C9F2C9;
+  background-color: white;
   overflow: hidden;
 }
 
@@ -181,6 +181,7 @@ body {
 #MachineLowerSection {
   position: relative;
   display: table;
+  padding-left: 0px;
 }
 
 #MachineLowerSection2 {
@@ -240,6 +241,7 @@ button {
   left: -9px; /* Using this because of Chrome, IE bugs - see above */
   top: 100%;
   width: 32px;
+  text-transform: uppercase;
 /*  display: none; */
 }
 

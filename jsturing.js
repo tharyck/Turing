@@ -1,17 +1,3 @@
-/* JavaScript Turing machine emulator
- * Anthony Morphett - awmorp@gmail.com
- *
- * With contributions from Erez Wanderman and Etai Gross
- */
-
-/* Version 2.0 - January 2015 */
-/* Uses jquery (1.11.1) */
-
-/* TODO:
-     - factorial sample program ?
-*/
-
-
 var nDebugLevel = 0;
 
 var bFullSpeed = false;	/* If true, run at full speed with no delay between steps */
