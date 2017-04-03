@@ -1,20 +1,13 @@
 var nDebugLevel = 0;
-
 var sFita = "";
 var nTapeOffset = 0;
 var nPosicaoCabeca = 0;
 var sEstados = "0";
-
-var nPassos = 0;
-
+var nPassos = 0;//numero de passos dados
 var aProgram = new Object();
-
-//Habilita e desabilita botoes de controle
-Controles( true, true, false, true, false);
-
-//quantidade de Passos que podem ser voltados
-var nMaxUndo = 0;
-
+var contador = 0;//contador para o passo a passo
+Controles( true, true, false, true, false);//Habilita e desabilita botoes de controle
+var nMaxUndo = 0;//quantidade de Passos que podem ser voltados
 var aUndoList = [];
 var nTextareaLines = -1;
 var oTextarea;
@@ -23,10 +16,10 @@ var oNextLineMarker = $("<div class='NextLineMarker'>Next<div class='NextLineMar
 var oPrevLineMarker = $("<div class='PrevLineMarker'>Prev<div class='PrevLineMarkerEnd'></div></div>");
 var oPrevInstruction = null;
 
-//Passos 
-function Step()
+function Step()//Passos da maquina
 {
-	if(nPassos){
+	//se nao houver movimento na maquina o painel fica parcialmente desabilitado
+	if(contador<=0){
 		Controles( false, false, true, true, false);
 	}else{
 		if( bIsDirty) Compile();
@@ -36,12 +29,12 @@ function Step()
 			return( false );
 		}
 	}
-	var NovoEstado, NovoSimbolo, nAcoes, nLinhas;
 
-	var sSimboloDaCabeca = GetTapeSymbol( nPosicaoCabeca );
-	
+	var NovoEstado, NovoSimbolo, nAcoes, nLinhas;//cria novo estado, simbolo, acoes e linhas
+	var sSimboloDaCabeca = GetTapeSymbol( nPosicaoCabeca );	//marca posicao da cabeca
 	var aInstructions = GetNextInstructions( sEstados, sSimboloDaCabeca );
 	var OInstrucao;
+	
 	if( aInstructions.length == 0 ) {
     OInstrucao = null;
 	} else {
@@ -56,8 +49,8 @@ function Step()
       nAcoes = 0;
     }
 		nLinhas = OInstrucao.sourceLineNumber;
+
 	} else {
-		debug( 1, "Warning: no instruction found for state '" + sEstados + "' symbol '" + sSimboloDaCabeca + "'; halting" );
 		NovoEstado = "halt";
 		NovoSimbolo = sSimboloDaCabeca;
 		nAcoes = 0;
@@ -78,7 +71,6 @@ function Step()
 	
 	oPrevInstruction = OInstrucao;
 	
-	debug( 4, "Step() finished. New tape: '" + sFita + "'  new state: '" + sEstados + "'  action: " + nAcoes + "  line number: " + nLinhas  );
 	UpdateInterface();
 	
 	if( NovoEstado.substring(0,4).toLowerCase() == "halt" ) {
@@ -96,32 +88,33 @@ function Step()
 	}
 }
 
-function Undo()
+
+function Undo()//volta um passo na execucao
 {
+
   var oUndoData = aUndoList.pop();
   if( oUndoData ) {
+  	//remove um passo
     nPassos--;
+    //deixa a quantidade de passos aserem voltados permitidos iguais a quantidade de passos existentes
     nMaxUndo=nPassos+1;
+
     sEstados = oUndoData.state;
     nPosicaoCabeca = oUndoData.position;
     SetTapeSymbol( nPosicaoCabeca, oUndoData.symbol );
     oPrevInstruction = null;
-    debug( 3, "Passo Anterior. Novo Estado: '" + sEstados + "' position : " + nPosicaoCabeca + " symbol: '" + oUndoData.symbol + "'" );
     Controles( true, true, true, true, true );
     UpdateInterface();
-  } else {
-    debug( 1, "Warning: Tried to undo with no undo data available!" );
   }
 }
 
-function Run()
+function Executar()//inicia a maquina de maneira continua;
 {    if( Step() ) {
-      window.setTimeout( Run, 50 );
+      window.setTimeout( Executar, 50 );
     }
   }
 
-
-function Reset()
+function Reiniciar()//reseta a maquina
 {
 	var sInitialTape = $("#InitialInput")[0].value;
 
@@ -151,7 +144,7 @@ function Reset()
 	UpdateInterface();
 }
 
-function createTuringInstructionFromTuple( tuple, line )
+function transformarEmTupla( tuple, line )
 {
 	return {
 		newSymbol: tuple.newSymbol,
@@ -170,8 +163,6 @@ function isArray( possiblyArr )
 function Compile()
 {
 	var sSource = oTextarea.value;
-	debug( 2, "Compile()" );
-	
 	SetSyntaxMessage( null );
 	ClearErrorLines();
 	
@@ -180,28 +171,24 @@ function Compile()
 	sSource = sSource.replace( /\r/g, "" );
 	
 	var aLines = sSource.split("\n");
-	for( var i = 0; i < aLines.length; i++ )
-	{
-		var OTupla = ParseLine( aLines[i], i );
+	for( var i = 0; i < aLines.length; i++ ){
+		var OTupla = AnalizaLinha( aLines[i], i );
 		if( OTupla.isValid ) {
-			debug( 5, " Parsed tuple: '" + OTupla.currentState + "'  '" + OTupla.currentSymbol + "'  '" + OTupla.newSymbol + "'  '" + OTupla.action + "'  '" + OTupla.newState + "'" );
 			if( aProgram[OTupla.currentState] == null ) aProgram[OTupla.currentState] = new Object;
 			if( aProgram[OTupla.currentState][OTupla.currentSymbol] == null ) {
         aProgram[OTupla.currentState][OTupla.currentSymbol] = [];
 			}
 			if( aProgram[OTupla.currentState][OTupla.currentSymbol].length > 0 ) {
-        debug( 1, "Warning: multiple definitions for state '" + OTupla.currentState + "' symbol '" + OTupla.currentSymbol + "' on lines " + (aProgram[OTupla.currentState][OTupla.currentSymbol][0].sourceLineNumber+1) + " and " + (i+1) );
         SetSyntaxMessage( "Warning: Multiple definitions for state '" + OTupla.currentState + "' symbol '" + OTupla.currentSymbol + "' on lines " + (aProgram[OTupla.currentState][OTupla.currentSymbol][0].sourceLineNumber+1) + " and " + (i+1) );
         SetErrorLine( i );
         SetErrorLine( aProgram[OTupla.currentState][OTupla.currentSymbol][0].sourceLineNumber );
-        aProgram[OTupla.currentState][OTupla.currentSymbol][0] = createTuringInstructionFromTuple( OTupla, i );
+        aProgram[OTupla.currentState][OTupla.currentSymbol][0] = transformarEmTupla( OTupla, i );
 			} else {
-        aProgram[OTupla.currentState][OTupla.currentSymbol].push( createTuringInstructionFromTuple( OTupla, i ) );
+        aProgram[OTupla.currentState][OTupla.currentSymbol].push( transformarEmTupla( OTupla, i ) );
       }
 		}
 		else if( OTupla.error )
 		{
-			debug( 2, "Syntax error: " + OTupla.error );
 			SetSyntaxMessage( OTupla.error );
 			SetErrorLine( i );
 		}
@@ -213,21 +200,17 @@ function Compile()
 		var nNewDebugLevel = parseInt( aResult[1] );
 		if( nNewDebugLevel != nDebugLevel ) {
 			nDebugLevel = parseInt( aResult[1] );
-			debug( 1, "Setting debug level to " + nDebugLevel );
 			if( nDebugLevel > 0 ) $(".DebugClass").toggle( true );
 		}
 	}
 	
 	oPrevInstruction = null;
-	
 	bIsDirty = false;
-	
 	UpdateInterface();
 }
 
-function ParseLine( sLine, nLineNum )
+function AnalizaLinha( sLine, nLineNum )//testa tamanho da tupla e se e valida
 {
-	debug( 5, "ParseLine( " + sLine + " )" );
 	sLine = sLine.split( ";", 1 )[0];
 
 	var aTokens = sLine.split(/\s+/);
@@ -245,50 +228,43 @@ function ParseLine( sLine, nLineNum )
 	
 	if( aTokens.length < 2 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": missing &lt;current symbol&gt;!" ;
 		return( OTupla );
 	}
+
 	if( aTokens[1].length > 1 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": &lt;current symbol&gt; should be a single character!" ;
 		return( OTupla );
 	}
 	OTupla.currentSymbol = aTokens[1];
 	
 	if( aTokens.length < 3 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": missing &lt;new symbol&gt;!" ;
 		return( OTupla );
 	}
 	if( aTokens[2].length > 1 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": &lt;new symbol&gt; should be a single character!" ;
 		return( OTupla );
 	}
 	OTupla.newSymbol = aTokens[2];
 	
 	if( aTokens.length < 4 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": missing &lt;direction&gt;!" ;
 		return( OTupla );
 	}
 	if( ["l","r","*"].indexOf( aTokens[3].toLowerCase() ) < 0 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": &lt;direction&gt; should be 'l', 'r' or '*'!";
 		return( OTupla );
 	}
 	OTupla.action = aTokens[3].toLowerCase();
 
 	if( aTokens.length < 5 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": missing &lt;new state&gt;!" ;
 		return( OTupla );
 	}
 	OTupla.newState = aTokens[4];
 	
 	if( aTokens.length > 6 ) {
 		OTupla.isValid = false;
-		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": too many entries!" ;
 		return( OTupla );
 	}
 	if( aTokens.length == 6 ) {
@@ -296,7 +272,6 @@ function ParseLine( sLine, nLineNum )
 			OTupla.breakpoint = true;
 		} else {
 			OTupla.isValid = false;
-			OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": too many entries!";
 			return( OTupla );
 		}
 	} else {
@@ -326,20 +301,21 @@ function GetNextInstructions( sEstados, sSimboloDaCabeca )
 function GetTapeSymbol( n )
 {
 	if( n < nTapeOffset || n >= sFita.length + nTapeOffset ) {
-		debug( 4, "GetTapeSymbol( " + n + " ) = '" + c + "'   outside sFita range" );
 		return( "_" );
 	} else {
 		var c = sFita.charAt( n - nTapeOffset );
-		if( c == " " ) { c = "_"; debug( 4, "Warning: GetTapeSymbol() got SPACE not _ !" ); }
-		debug( 4, "GetTapeSymbol( " + n + " ) = '" + c + "'" );
+		if( c == " " ) { 
+			c = "_"; 
+		}
 		return( c );
 	}
 }
 
 function SetTapeSymbol( n, c )
 {
-	debug( 4, "SetTapeSymbol( " + n + ", " + c + " ); sFita = '" + sFita + "' nTapeOffset = " + nTapeOffset );
-	if( c == " " ) { c = "_"; debug( 4, "Warning: SetTapeSymbol() with SPACE not _ !" ); }
+	if( c == " " ) { 
+		c = "_"; 
+	 }
 	
 	if( n < nTapeOffset ) {
 		sFita = c + repeat( "_", nTapeOffset - n - 1 ) + sFita;
@@ -356,13 +332,11 @@ function SetSyntaxMessage( msg )
 	$("#SyntaxMsg").html( (msg?msg:"&nbsp;") )
 }
 
-function RenderTape()
+function RenderizarFita()
 {
 	var nMovimentacaoPosicaoCabeca = nPosicaoCabeca - nTapeOffset;
 	var sFirstPart, sSimboloDaCabeca, sSecondPart;
-	debug( 4, "RenderTape: translated head pos: " + nMovimentacaoPosicaoCabeca + "  head pos: " + nPosicaoCabeca + "  tape offset: " + nTapeOffset );
-	debug( 4, "RenderTape: sFita = '" + sFita + "'" );
-
+	
 	if( nMovimentacaoPosicaoCabeca > 0 ) {
 		sFirstPart = sFita.substr( 0, nMovimentacaoPosicaoCabeca );
 	} else {
@@ -389,12 +363,9 @@ function RenderTape()
 	}
 	sSecondPart = sSecondPart.replace( /_/g, " " );
 	
-	debug( 4, "RenderTape: sFirstPart = '" + sFirstPart + "' sSimboloDaCabeca = '" + sSimboloDaCabeca + "'  sSecondPart = '" + sSecondPart + "'" );
-	
 	$("#LeftTape").text( sFirstPart );
 	$("#ActiveTape").text( sSimboloDaCabeca );
 	$("#RightTape").text( sSecondPart );
-	debug( 4, "RenderTape(): LeftTape = '" + $("#LeftTape").text() + "' ActiveTape = '" + $("#ActiveTape").text() + "' RightTape = '" + $("#RightTape").text() + "'" );
 	
 	if( $("#ActiveTapeArea").position().left < 0 ) {
 		$("#MachineTape").scrollLeft( $("#MachineTape").scrollLeft() + $("#ActiveTapeArea").position().left - 10 );
@@ -403,12 +374,12 @@ function RenderTape()
 	}
 }
 
-function RenderState()
+function RenderState()//renderiza os estados
 {
 	$("#MachineState").html( sEstados );
 }
 
-function RenderSteps()
+function RenderSteps()//renderiza os passos
 {
 	$("#MachineSteps").html( nPassos );
 }
@@ -416,62 +387,54 @@ function RenderSteps()
 function RenderLineMarkers()
 {
   var oNextList = $.map(GetNextInstructions( sEstados, GetTapeSymbol( nPosicaoCabeca ) ), function(x){return(x.sourceLineNumber);} );
-	debug( 3, "Rendering line markers: " + (oNextList) + " " + (oPrevInstruction?oPrevInstruction.sourceLineNumber:-1) );
 	SetActiveLines( oNextList, (oPrevInstruction?oPrevInstruction.sourceLineNumber:-1) );
 }
 
-function UpdateInterface()
+function UpdateInterface()//faz a renderizacao de toda a interface grafica da maquina.
 {
-	RenderTape();
+	RenderizarFita();
 	RenderState();
 	RenderSteps();
 	RenderLineMarkers();
-
 }
 
-function ClearDebug()
-{
-	$("#debug").empty();
-}
-
-function Controles( bStep, bRun, bReset, bTextarea, bUndo )
+function Controles( bStep, bRun, bReset, bTextarea, bUndo )//habilita e desabilita botoes de controle
 {
   document.getElementById( 'StepButton' ).disabled = !bStep;
   document.getElementById( 'RunButton' ).disabled = !bRun;
   document.getElementById( 'ResetButton' ).disabled = !bReset;
   document.getElementById( 'Source' ).disabled = !bTextarea;
-  EnableUndoButton(bUndo);
+  UndoButton(bUndo);
 
 }
 
-function EnableUndoButton(bUndo)
+function UndoButton(bUndo)//habilita e desabilita botao voltar
 {
   document.getElementById( 'UndoButton' ).disabled = !(bUndo && aUndoList.length > 0);
 }
 
-function StepButton()
+function StepButton()//botao de passo a passo
 {
-	if(nPassos>0){
+	if(contador>0){//se o contador for zero, inicia a maquina e habilita botao de voltar
 	Step();
-	EnableUndoButton(true);
-	}else{
+	UndoButton(true);
+	}else{//se a maquina ja estiver em uso, reseta a maquina
 		ResetButton();
+		contador++;
 	}
 }
 
-
-//botao de inicio. reseta a maquina (volta a maquina ao estado inicial, reseta os controles e inicia a maquina)
-function RunButton()
+function RunButton()//botao de inicio. reseta a maquina (volta a maquina ao estado inicial, reseta os controles e inicia a maquina)
 {
 	ResetButton();
 	Controles( false, false, false, false, false );
-	Run();
+	Executar();
 }
 
-//botao de reset. reseta a maquina e os controles
-function ResetButton()
+function ResetButton()//botao de Reiniciar. reseta a maquina e os controles
 {
-	Reset();
+	contador=0;
+	Reiniciar();
 	Controles( true, true, false, true, false );
 }
 
@@ -533,15 +496,3 @@ function OnLoad()
 	
 	VariantChanged(false);
 }
-
-function debug( n, str )
-{
-	if( n <= 0 ) {
-		console.log( str );
-	}
-	if( nDebugLevel >= n  ) {
-		$("#debug").append( document.createTextNode( str + "\n" ) );
-		console.log( str );
-	}
-}
-
