@@ -38,12 +38,11 @@ function Step()
 	bIsReset = false;
 	if( sState.substring(0,4).toLowerCase() == "halt" ) {
 		/* debug( 1, "Warning: Step() called while in halt state" ); */
-		SetStatusMessage( "Halted." );
 		EnableControls( false, false, true, true, true );
 		return( false );
 	}
 	
-	var sNewState, sNewSymbol, nAction, nLineNumber;
+	var NovoEstado, NovoSimbolo, nAction, nLineNumber;
 	
 	/* Get current symbol */
 	var sHeadSymbol = GetTapeSymbol( nHeadPosition );
@@ -63,8 +62,8 @@ function Step()
 	}
 	
 	if( oInstruction != null ) {
-		sNewState = (oInstruction.newState == "*" ? sState : oInstruction.newState);
-		sNewSymbol = (oInstruction.newSymbol == "*" ? sHeadSymbol : oInstruction.newSymbol);
+		NovoEstado = (oInstruction.newState == "*" ? sState : oInstruction.newState);
+		NovoSimbolo = (oInstruction.newSymbol == "*" ? sHeadSymbol : oInstruction.newSymbol);
 		nAction = (oInstruction.action.toLowerCase() == "r" ? 1 : (oInstruction.action.toLowerCase() == "l" ? -1 : 0));
     if( nVariant == 1 && nHeadPosition == 0 && nAction == -1 ) {
       nAction = 0;  /* Can't move left when already at left-most tape cell. */
@@ -73,9 +72,8 @@ function Step()
 	} else {
 		/* No matching rule found; halt */
 		debug( 1, "Warning: no instruction found for state '" + sState + "' symbol '" + sHeadSymbol + "'; halting" );
-		SetStatusMessage( "Halted. No rule for state '" + sState + "' and symbol '" + sHeadSymbol + "'.", 2 );
-		sNewState = "halt";
-		sNewSymbol = sHeadSymbol;
+		NovoEstado = "halt";
+		NovoSimbolo = sHeadSymbol;
 		nAction = 0;
 		nLineNumber = -1;
 	}
@@ -87,8 +85,8 @@ function Step()
   }
 	
 	/* Update machine tape & state */
-	SetTapeSymbol( nHeadPosition, sNewSymbol );
-	sState = sNewState;
+	SetTapeSymbol( nHeadPosition, NovoSimbolo );
+	sState = NovoEstado;
 	nHeadPosition += nAction;
 	
 	nSteps++;
@@ -98,15 +96,13 @@ function Step()
 	debug( 4, "Step() finished. New tape: '" + sTape + "'  new state: '" + sState + "'  action: " + nAction + "  line number: " + nLineNumber  );
 	UpdateInterface();
 	
-	if( sNewState.substring(0,4).toLowerCase() == "halt" ) {
+	if( NovoEstado.substring(0,4).toLowerCase() == "halt" ) {
 		if( oInstruction != null ) {
-			SetStatusMessage( "Halted." );
 		} 
 		EnableControls( false, false, true, true, true );
 		return( false );
 	} else {
 		if( oInstruction.breakpoint ) {
-			SetStatusMessage( "Stopped at breakpoint on line " + (nLineNumber+1) );
 			EnableControls( true, true, true, true, true );
 			return( false );
 		} else {
@@ -125,9 +121,8 @@ function Undo()
     nHeadPosition = oUndoData.position;
     SetTapeSymbol( nHeadPosition, oUndoData.symbol );
     oPrevInstruction = null;
-    debug( 3, "Undone one step. New state: '" + sState + "' position : " + nHeadPosition + " symbol: '" + oUndoData.symbol + "'" );
+    debug( 3, "Passo Anterior. Novo Estado: '" + sState + "' position : " + nHeadPosition + " symbol: '" + oUndoData.symbol + "'" );
     EnableControls( true, true, true, true, true );
-    SetStatusMessage( "Undone one step." /*+ (aUndoList.length == 0 ? " No more undoes available." : " (" + aUndoList.length + " remaining)")*/ );
     UpdateInterface();
   } else {
     debug( 1, "Warning: Tried to undo with no undo data available!" );
@@ -434,20 +429,6 @@ function SetTapeSymbol( n, c )
 	}
 }
 
-/* SetStatusMessage(): display sString in the status message area */
-/* nBgFlash: 1: flash green for success; 2: flash red for failure; -1: do not flash, even if repeating a message */
-function SetStatusMessage( sString, nBgFlash )
-{
-	$( "#MachineStatusMsgText" ).html( sString );
-  if( nBgFlash > 0 ) {
-    $("#MachineStatusMsgBg").stop(true, true).css("background-color",(nBgFlash==1?"#c9f2c9":"#ffb3b3")).show().fadeOut(600);
-  }
-  if( sString != "" && sPreviousStatusMsg == sString && nBgFlash != -1 ) {
-    $("#MachineStatusMsgBg").stop(true, true).css("background-color","#bbf8ff").show().fadeOut(600);
-  }
-  if( sString != "" ) sPreviousStatusMsg = sString;
-}
-
 /* SetSyntaxMessage(): display a syntax error message in the textarea */
 function SetSyntaxMessage( msg )
 {
@@ -559,14 +540,13 @@ function EnableUndoButton(bUndo)
 
 function StepButton()
 {
-	SetStatusMessage( "", -1 );
 	Step();
 	EnableUndoButton(true);
 }
 
 function RunButton()
 {
-	SetStatusMessage( "Running..." );
+	ResetButton();
 	/* Make sure that the step interval is up-to-date */
 	EnableControls( false, false, false, false, false );
 	Run();
@@ -574,23 +554,8 @@ function RunButton()
 
 function ResetButton()
 {
-	SetStatusMessage( "Machine reset. Click 'Run' or 'Step' to start." );
 	Reset();
 	EnableControls( true, true, true, true, false );
-}
-
-
-function VariantChanged(needWarning)
-{
-  var dropdown = $("#MachineVariant")[0];
-  var selected = Number(dropdown.options[dropdown.selectedIndex].value);
-  var descriptions = {
-    0: "Standard Turing machine with tape infinite in both directions",
-    1: "Turing machine with tape infinite in one direction only (as used in, eg, <a href='http://math.mit.edu/~sipser/book.html'>Sipser</a>)",
-    2: "Non-deterministic Turing machine which allows multiple rules for the same state and symbol pair, and chooses one at random"
-  };
-  $("#MachineVariantDescription").html( descriptions[selected] );
-  if( needWarning ) ShowResetMsg(true);
 }
 
 function SetupVariantCSS()
@@ -611,52 +576,6 @@ function ShowResetMsg(b)
     $("#ResetMessage").hide();
     $("#ResetButton").removeClass("glow");
   }
-}
-
-function LoadSampleProgram( zName, zFriendlyName, bInitial )
-{
-	debug( 1, "Load '" + zName + "'" );
-	SetStatusMessage( "Loading sample program..." );
-	var zFileName = "machines/" + zName + ".txt";
-	
-	StopTimer();   /* Stop machine, if currently running */
-	
-	$.ajax({
-		url: zFileName,
-		type: "GET",
-		dataType: "text",
-		success: function( sData, sStatus, oRequestObj ) {
-			/* Load the default initial tape, if any */
-			var oRegExp = new RegExp( ";.*\\$INITIAL_TAPE:? *(.+)$" );
-			var aRegexpResult = oRegExp.exec( sData );
-			if( aRegexpResult != null && aRegexpResult.length >= 2 ) {
-				debug( 4, "Parsed initial tape: '" + aRegexpResult + "' length: " + (aRegexpResult == null ? "null" : aRegexpResult.length) );
-				$("#InitialInput")[0].value = aRegexpResult[1];
-				sData = sData.replace( /^.*\$INITIAL_TAPE:.*$/m, "" );
-			}
-			$("#InitialState")[0].value = "0";
-			nVariant = 0;
-			$("#MachineVariant").val(0);
-			VariantChanged(false);
-			/* TODO: Set up CSS */
-
-			/* Load the program */
-			oTextarea.value = sData;
-			TextareaChanged();
-			Compile();
-			
-			/* Reset the machine  */
-			Reset();
-			if( !bInitial ) SetStatusMessage( zFriendlyName + " successfully loaded", 1 );
-		},
-		error: function( oData, sStatus, oRequestObj ) {
-			debug( 1, "Error: Load failed. HTTP response " + oRequestObj.status + " " + oRequestObj.statusText );
-			SetStatusMessage( "Error loading " + zFriendlyName + " :(", 2 );
-		}
-	});
-	
-	$("#LoadMenu").slideUp();
-	ClearSaveMessage();
 }
 
 /* Highlight given lines as the next/previous tuple */
@@ -717,31 +636,11 @@ function OnLoad()
 	TextareaChanged();
 	
 	VariantChanged(false); /* Set up variant description */
-	
-	if( window.location.search != "" ) {
-		SetStatusMessage( "Loading saved machine..." );
-		LoadFromCloud( window.location.search.substring( 1 ) );
-		window.history.replaceState( null, "", window.location.pathname );  /* Remove query string from URL */
-	} else {
-		LoadSampleProgram( 'palindrome', 'Default program', true );
-		SetStatusMessage( 'Load or write a Turing machine program and click Run!' );
-	}
 }
-
-
-/* return a string of n copies of c */
-function repeat( c, n )
-{
-	var sTmp = "";
-	while( n-- > 0 ) sTmp += c;
-	return sTmp;
-}
-
 
 function debug( n, str )
 {
 	if( n <= 0 ) {
-		SetStatusMessage( str );
 		console.log( str );
 	}
 	if( nDebugLevel >= n  ) {
