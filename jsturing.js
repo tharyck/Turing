@@ -69,7 +69,7 @@ function Step()
 	}
 	
   if( nMaxUndo > 0 ) {
-    if( aUndoList.length >= nMaxUndo ) aUndoList.shift();  /* Discard oldest undo entry */
+    if( aUndoList.length >= nMaxUndo ) aUndoList.shift();
     aUndoList.push({state: sEstados, position: nPosicaoCabeca, symbol: sSimboloDaCabeca});
   }
 	
@@ -100,7 +100,6 @@ function Step()
 	}
 }
 
-/* Undo(): undo a single step of the machine */
 function Undo()
 {
   var oUndoData = aUndoList.pop();
@@ -119,48 +118,39 @@ function Undo()
   }
 }
 
-
-/* Run(): run the TM until it halts or until user interrupts it */
 function Run()
 {
   var bContinue = true;
   if( bFullSpeed ) {
-    /* Run 25 steps at a time in fast mode */
     for( var i = 0; bContinue && i < 25; i++ ) {
       bContinue = Step();
     }
     if( bContinue ) hRunTimer = window.setTimeout( Run, 10 );
-    else UpdateInterface();   /* Sometimes updates get lost at full speed... */
+    else UpdateInterface();
   } else {
-    /* Run a single step every 50ms in slow mode */
     if( Step() ) {
       hRunTimer = window.setTimeout( Run, 50 );
     }
   }
 }
 
-/* Reset( ): re-initialise the TM */
 function Reset()
 {
 	var sInitialTape = $("#InitialInput")[0].value;
 
-	/* Find the initial head location, if given */
 	nPosicaoCabeca = sInitialTape.indexOf( "*" );
 	if( nPosicaoCabeca == -1 ) nPosicaoCabeca = 0;
 
-	/* Initialise tape */
 	sInitialTape = sInitialTape.replace( /\*/g, "" ).replace( / /g, "_" );
 	if( sInitialTape == "" ) sInitialTape = " ";
 	sFita = sInitialTape;
 	nTapeOffset = 0;
 	
-	/* Initialise state */
 	var sInitialState = $("#InitialState")[0].value;
 	sInitialState = $.trim( sInitialState ).split(/\s+/)[0];
 	if( !sInitialState || sInitialState == "" ) sInitialState = "0";
 	sEstados = sInitialState;
 	
-	/* Initialise variant */
   var dropdown = $("#MachineVariant")[0];
   nVariante = Number(dropdown.options[dropdown.selectedIndex].value);
   SetupVariantCSS();
@@ -195,20 +185,17 @@ function isArray( possiblyArr )
 	Object.prototype.toString.call(possiblyArr) === "[object Array]";
 }
 
-/* Compile(): parse the inputted program and store it in aProgram */
 function Compile()
 {
 	var sSource = oTextarea.value;
 	debug( 2, "Compile()" );
 	
-	/* Clear syntax error messages */
 	SetSyntaxMessage( null );
 	ClearErrorLines();
 	
-	/* clear the old program */
 	aProgram = new Object;
 	
-	sSource = sSource.replace( /\r/g, "" );	/* Internet Explorer uses \n\r, other browsers use \n */
+	sSource = sSource.replace( /\r/g, "" );
 	
 	var aLines = sSource.split("\n");
 	for( var i = 0; i < aLines.length; i++ )
@@ -232,7 +219,6 @@ function Compile()
 		}
 		else if( OTupla.error )
 		{
-			/* Syntax error */
 			debug( 2, "Syntax error: " + OTupla.error );
 			SetSyntaxMessage( OTupla.error );
 			SetErrorLine( i );
@@ -250,7 +236,6 @@ function Compile()
 		}
 	}
 	
-	/* Lines have changed. Previous line is no longer meaningful, recalculate next line. */
 	oPrevInstruction = null;
 	
 	bIsDirty = false;
@@ -260,11 +245,9 @@ function Compile()
 
 function ParseLine( sLine, nLineNum )
 {
-	/* discard anything following ';' */
 	debug( 5, "ParseLine( " + sLine + " )" );
 	sLine = sLine.split( ";", 1 )[0];
 
-	/* split into tokens - separated by tab or space */
 	var aTokens = sLine.split(/\s+/);
 	aTokens = aTokens.filter( function (arg) { return( arg != "" ) ;} );
 
@@ -326,7 +309,7 @@ function ParseLine( sLine, nLineNum )
 		OTupla.error = "Syntax error on line " + (nLineNum + 1) + ": too many entries!" ;
 		return( OTupla );
 	}
-	if( aTokens.length == 6 ) {		/* Anything other than '!' in position 6 is an error */
+	if( aTokens.length == 6 ) {
 		if( aTokens[5] == "!" ) {
 			OTupla.breakpoint = true;
 		} else {
@@ -342,29 +325,22 @@ function ParseLine( sLine, nLineNum )
 	return( OTupla );
 }
 
-// Get all applicable instructions for the given state and symbol.
-// Returns an array of instructions, to support non-deterministic machines.
 function GetNextInstructions( sEstados, sSimboloDaCabeca )
 {
   var result = null;
 	if( aProgram[sEstados] != null && aProgram[sEstados][sSimboloDaCabeca] != null ) {
-		/* Use instructions specifically corresponding to current state & symbol, if any */
 		return( aProgram[sEstados][sSimboloDaCabeca] );
 	} else if( aProgram[sEstados] != null && aProgram[sEstados]["*"] != null ) {
-		/* Next use rules for the current state and default symbol, if any */
 		return( aProgram[sEstados]["*"] );
 	} else if( aProgram["*"] != null && aProgram["*"][sSimboloDaCabeca] != null ) {
-		/* Next use rules for default state and current symbol, if any */
 		return( aProgram["*"][sSimboloDaCabeca] );
 	} else if( aProgram["*"] != null && aProgram["*"]["*"] != null ) {
-		/* Finally use rules for default state and default symbol */
 		return( aProgram["*"]["*"] );
 	} else {
     return( [] );
   }
 }
 
-/* GetTapeSymbol( n ): returns the symbol at cell n of the TM tape */
 function GetTapeSymbol( n )
 {
 	if( n < nTapeOffset || n >= sFita.length + nTapeOffset ) {
@@ -378,8 +354,6 @@ function GetTapeSymbol( n )
 	}
 }
 
-
-/* SetTapeSymbol( n, c ): writes symbol c to cell n of the TM tape */
 function SetTapeSymbol( n, c )
 {
 	debug( 4, "SetTapeSymbol( " + n + ", " + c + " ); sFita = '" + sFita + "' nTapeOffset = " + nTapeOffset );
@@ -395,21 +369,14 @@ function SetTapeSymbol( n, c )
 	}
 }
 
-/* SetSyntaxMessage(): display a syntax error message in the textarea */
 function SetSyntaxMessage( msg )
 {
 	$("#SyntaxMsg").html( (msg?msg:"&nbsp;") )
 }
 
-/* RenderTape(): show the tape contents and head position in the MachineTape div */
 function RenderTape()
 {
-	/* calculate the strings:
-	  sFirstPart is the portion of the tape to the left of the head
-	  sSimboloDaCabeca is the symbol under the head
-	  sSecondPart is the portion of the tape to the right of the head
-	*/
-	var nMovimentacaoPosicaoCabeca = nPosicaoCabeca - nTapeOffset;  /* position of the head relative to sFita */
+	var nMovimentacaoPosicaoCabeca = nPosicaoCabeca - nTapeOffset;
 	var sFirstPart, sSimboloDaCabeca, sSecondPart;
 	debug( 4, "RenderTape: translated head pos: " + nMovimentacaoPosicaoCabeca + "  head pos: " + nPosicaoCabeca + "  tape offset: " + nTapeOffset );
 	debug( 4, "RenderTape: sFita = '" + sFita + "'" );
@@ -419,7 +386,7 @@ function RenderTape()
 	} else {
 		sFirstPart = "";
 	}
-	if( nMovimentacaoPosicaoCabeca > sFita.length ) {  /* Need to append blanks to sFirstPart.  Shouldn't happen but just in case. */
+	if( nMovimentacaoPosicaoCabeca > sFita.length ) {
 		sFirstPart += repeat( " ", nMovimentacaoPosicaoCabeca - sFita.length );
 	}
 	sFirstPart = sFirstPart.replace( /_/g, " " );
@@ -427,15 +394,15 @@ function RenderTape()
 	if( nMovimentacaoPosicaoCabeca >= 0 && nMovimentacaoPosicaoCabeca < sFita.length ) {
 		sSimboloDaCabeca = sFita.charAt( nMovimentacaoPosicaoCabeca );
 	} else {
-		sSimboloDaCabeca = " ";	/* Shouldn't happen but just in case */
+		sSimboloDaCabeca = " ";
 	}
 	sSimboloDaCabeca = sSimboloDaCabeca.replace( /_/g, " " );
 	
 	if( nMovimentacaoPosicaoCabeca >= 0 && nMovimentacaoPosicaoCabeca < sFita.length - 1 ) {
 		sSecondPart = sFita.substr( nMovimentacaoPosicaoCabeca + 1 );
-	} else if( nMovimentacaoPosicaoCabeca < 0 ) {  /* Need to prepend blanks to sSecondPart. Shouldn't happen but just in case. */
+	} else if( nMovimentacaoPosicaoCabeca < 0 ) {
 		sSecondPart = repeat( " ", -nMovimentacaoPosicaoCabeca - 1 ) + sFita;
-	} else {  /* nMovimentacaoPosicaoCabeca > sFita.length */
+	} else {
 		sSecondPart = "";
 	}
 	sSecondPart = sSecondPart.replace( /_/g, " " );
@@ -447,7 +414,6 @@ function RenderTape()
 	$("#RightTape").text( sSecondPart );
 	debug( 4, "RenderTape(): LeftTape = '" + $("#LeftTape").text() + "' ActiveTape = '" + $("#ActiveTape").text() + "' RightTape = '" + $("#RightTape").text() + "'" );
 	
-	/* Scroll tape display to make sure that head is visible */
 	if( $("#ActiveTapeArea").position().left < 0 ) {
 		$("#MachineTape").scrollLeft( $("#MachineTape").scrollLeft() + $("#ActiveTapeArea").position().left - 10 );
 	} else if( $("#ActiveTapeArea").position().left + $("#ActiveTapeArea").width() > $("#MachineTape").width() ) {
@@ -472,7 +438,6 @@ function RenderLineMarkers()
 	SetActiveLines( oNextList, (oPrevInstruction?oPrevInstruction.sourceLineNumber:-1) );
 }
 
-/* UpdateInterface(): refresh the tape, state and steps displayed on the page */
 function UpdateInterface()
 {
 	RenderTape();
@@ -501,8 +466,6 @@ function EnableUndoButton(bUndo)
 {
   document.getElementById( 'UndoButton' ).disabled = !(bUndo && aUndoList.length > 0);
 }
-
-/* Trigger functions for the buttons */
 
 function StepButton()
 {
@@ -550,8 +513,6 @@ function ShowResetMsg(b)
   }
 }
 
-/* Highlight given lines as the next/previous tuple */
-/* next is a list of lines (to support nondeterministic TM), prev is a number */
 function SetActiveLines( next, prev )
 {
 	$(".talinebgnext").removeClass('talinebgnext');
@@ -581,26 +542,23 @@ function SetActiveLines( next, prev )
 	}
 }
 
-/* Highlight given line as an error */
 function SetErrorLine( num )
 {
 	$("#talinebg"+(num+1)).addClass('talinebgerror');
 }
 
-/* Clear error highlights from all lines */
 function ClearErrorLines()
 {
 	$(".talinebg").removeClass('talinebgerror');
 }
 
-/* OnLoad function for HTML body.  Initialise things when page is loaded. */
 function OnLoad()
 {
 	if( nDebugLevel > 0 ) $(".DebugClass").toggle( true );
 	oTextarea = $("#Source")[0];
 	TextareaChanged();
 	
-	VariantChanged(false); /* Set up variant description */
+	VariantChanged(false);
 }
 
 function debug( n, str )
