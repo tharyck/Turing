@@ -39,7 +39,7 @@ function Step()
 	if( sState.substring(0,4).toLowerCase() == "halt" ) {
 		/* debug( 1, "Warning: Step() called while in halt state" ); */
 		SetStatusMessage( "Halted." );
-		EnableControls( false, false, false, true, true, true, true );
+		EnableControls( false, false, true, true, true );
 		return( false );
 	}
 	
@@ -102,12 +102,12 @@ function Step()
 		if( oInstruction != null ) {
 			SetStatusMessage( "Halted." );
 		} 
-		EnableControls( false, false, false, true, true, true, true );
+		EnableControls( false, false, true, true, true );
 		return( false );
 	} else {
 		if( oInstruction.breakpoint ) {
 			SetStatusMessage( "Stopped at breakpoint on line " + (nLineNumber+1) );
-			EnableControls( true, true, false, true, true, true, true );
+			EnableControls( true, true, true, true, true );
 			return( false );
 		} else {
 			return( true );
@@ -126,7 +126,7 @@ function Undo()
     SetTapeSymbol( nHeadPosition, oUndoData.symbol );
     oPrevInstruction = null;
     debug( 3, "Undone one step. New state: '" + sState + "' position : " + nHeadPosition + " symbol: '" + oUndoData.symbol + "'" );
-    EnableControls( true, true, false, true, true, true, true );
+    EnableControls( true, true, true, true, true );
     SetStatusMessage( "Undone one step." /*+ (aUndoList.length == 0 ? " No more undoes available." : " (" + aUndoList.length + " remaining)")*/ );
     UpdateInterface();
   } else {
@@ -207,7 +207,7 @@ function Reset()
 	aUndoList = [];
 	
 	ShowResetMsg(false);
-	EnableControls( true, true, false, true, true, true, false );
+	EnableControls( true, true, true, true, false );
 	UpdateInterface();
 }
 
@@ -434,67 +434,6 @@ function SetTapeSymbol( n, c )
 	}
 }
 
-
-/* SaveMachineSnapshot(): Store the current machine and state as an object suitable for saving as JSON */
-function SaveMachineSnapshot()
-{
-	return( {
-		"program": oTextarea.value,
-		"state": sState,
-		"tape": sTape,
-		"tapeoffset": nTapeOffset,
-		"headposition": nHeadPosition,
-		"steps": nSteps,
-		"initialtape": $("#InitialInput")[0].value,
-		"initialstate": $("#InitialState")[0].value,
-		"fullspeed": bFullSpeed,
-		"variant": nVariant,
-		"version": 1		/* Internal version number */
-	});
-}
-
-/* LoadMachineState(): Load a machine and state from an object created by SaveMachineSnapshot */
-function LoadMachineSnapshot( oObj )
-{
-	if( oObj.version && oObj.version != 1 ) debug( 1, "Warning: saved machine has unknown version number " + oObj.version );
-	if( oObj.program ) oTextarea.value = oObj.program;
-	if( oObj.state ) sState = oObj.state;
-	if( oObj.tape ) sTape = oObj.tape;
-	if( oObj.tapeoffset ) nTapeOffset = oObj.tapeoffset;
-	if( oObj.headposition ) nHeadPosition = oObj.headposition;
-	if( oObj.steps ) nSteps = oObj.steps;
-	if( oObj.initialtape ) $("#InitialInput")[0].value = oObj.initialtape;
-	if( oObj.initialstate ) {
-		$("#InitialState")[0].value = oObj.initialstate;
-	} else {
-		$("#InitialState")[0].value = "";
-	}
-	if( oObj.fullspeed ) {
-		$("#SpeedCheckbox")[0].checked = oObj.fullspeed;
-		bFullSpeed = oObj.fullspeed;
-	}
-	if( oObj.variant ) {
-	  nVariant = oObj.variant;
-	} else {
-    nVariant = 0;
-	}
-	$("#MachineVariant").val(nVariant);
-	VariantChanged(false);
-	SetupVariantCSS();
-	aUndoList = [];
-	if( sState.substring(0,4).toLowerCase() == "halt" ) {
-		SetStatusMessage( "Machine loaded. Halted.", 1 );
-		EnableControls( false, false, false, true, true, true, true );
-	} else {
-		SetStatusMessage( "Machine loaded and ready", 1  );
-		EnableControls( true, true, false, true, true, true, true );
-	}
-	TextareaChanged();
-	Compile();
-	UpdateInterface();
-}
-
-
 /* SetStatusMessage(): display sString in the status message area */
 /* nBgFlash: 1: flash green for success; 2: flash red for failure; -1: do not flash, even if repeating a message */
 function SetStatusMessage( sString, nBgFlash )
@@ -601,20 +540,14 @@ function ClearDebug()
 	$("#debug").empty();
 }
 
-function EnableControls( bStep, bRun, bStop, bReset, bSpeed, bTextarea, bUndo )
+function EnableControls( bStep, bRun, bReset, bTextarea, bUndo )
 {
   document.getElementById( 'StepButton' ).disabled = !bStep;
   document.getElementById( 'RunButton' ).disabled = !bRun;
-  document.getElementById( 'StopButton' ).disabled = !bStop;
   document.getElementById( 'ResetButton' ).disabled = !bReset;
-  document.getElementById( 'SpeedCheckbox' ).disabled = !bSpeed;
   document.getElementById( 'Source' ).disabled = !bTextarea;
   EnableUndoButton(bUndo);
-  if( bSpeed ) {
-    $( "#SpeedCheckboxLabel" ).removeClass( "disabled" );
-  } else {
-    $( "#SpeedCheckboxLabel" ).addClass( "disabled" );
-  }
+
 }
 
 function EnableUndoButton(bUndo)
@@ -635,31 +568,17 @@ function RunButton()
 {
 	SetStatusMessage( "Running..." );
 	/* Make sure that the step interval is up-to-date */
-	SpeedCheckbox();
-	EnableControls( false, false, true, false, false, false, false );
+	EnableControls( false, false, false, false, false );
 	Run();
-}
-
-function StopButton()
-{
-	if( hRunTimer != null ) {
-		SetStatusMessage( "Paused; click 'Run' or 'Step' to resume." );
-		EnableControls( true, true, false, true, true, true, true );
-		StopTimer();
-	}
 }
 
 function ResetButton()
 {
 	SetStatusMessage( "Machine reset. Click 'Run' or 'Step' to start." );
 	Reset();
-	EnableControls( true, true, false, true, true, true, false );
+	EnableControls( true, true, true, true, false );
 }
 
-function SpeedCheckbox()
-{
-  bFullSpeed = $( '#SpeedCheckbox' )[0].checked;
-}
 
 function VariantChanged(needWarning)
 {
@@ -692,107 +611,6 @@ function ShowResetMsg(b)
     $("#ResetMessage").hide();
     $("#ResetButton").removeClass("glow");
   }
-}
-
-function LoadFromCloud( sID )
-{
-	/* Get data from github */
-	$.ajax({
-		url: "https://api.github.com/gists/" + sID,
-		type: "GET",
-		dataType: "json",
-		success: loadSuccessCallback,
-		error: loadErrorCallback
-	});
-}
-
-function loadSuccessCallback( oData )
-{
-	if( !oData || !oData.files || !oData.files["machine.json"] || !oData.files["machine.json"].content ) {
-		debug( 1, "Error: Load AJAX request succeeded but can't find expected data." );
-		SetStatusMessage( "Error loading saved machine :(", 2 );
-		return;
-	}
-	var oUnpackedObject;
-	try {
-		oUnpackedObject = JSON.parse( oData.files["machine.json"].content );
-	} catch( e ) {
-		debug( 1, "Error: Exception when unpacking JSON: " + e );
-		SetStatusMessage( "Error loading saved machine :(", 2 );
-		return;
-	}
-	LoadMachineSnapshot( oUnpackedObject );
-}
-
-function loadErrorCallback( oData, sStatus, oRequestObj )
-{
-	debug( 1, "Error: Load failed. AJAX request to Github failed. HTTP response " + oRequestObj );
-	SetStatusMessage( "Error loading saved machine :(", 2 );
-}
-
-function SaveToCloud()
-{
-	SetSaveMessage( "Saving...", null );
-	var oUnpackedObject = SaveMachineSnapshot();
-	var gistApiInput = {
-		"description": "Saved Turing machine state from http://morphett.info/turing/turing.html",
-		"public": false,
-		"files": {
-			"machine.json": {
-				"content": JSON.stringify( oUnpackedObject )
-			}
-		}
-	};
-	$.ajax({
-		url: "https://api.github.com/gists",
-		type: "POST",
-		data: JSON.stringify(gistApiInput),
-		dataType: "json", 
-		contentType: 'application/json; charset=utf-8',
-		success: saveSuccessCallback,
-		error: saveErrorCallback
-	});
-}
-
-function saveSuccessCallback( oData )
-{
-	if( oData && oData.id ) {
-		var sURL = window.location.href.replace(/[\#\?].*/,"");		/* Strip off any hash or query parameters, ie "?12345678" */
-		sURL += "?" + oData.id;									/* Append gist id as query string */
-		//var sURL = "http://morphett.info/turing/turing.html" + "?" + oData.id;
-		debug( 1, "Save successful. Gist ID is " + oData.id + " Gist URL is " + oData.url /*+ ", user URL is " + sURL */ );
-		
-		var oNow = new Date();
-		
-		var sTimestamp = (oNow.getHours() < 10 ? "0" + oNow.getHours() : oNow.getHours()) + ":" + (oNow.getMinutes() < 10 ? "0" + oNow.getMinutes() : oNow.getMinutes()) + ":" + (oNow.getSeconds() < 10 ? "0" + oNow.getSeconds() : oNow.getSeconds());/* + " " + oNow.toLocaleDateString();*/
-		
-		SetSaveMessage( "Saved! Your URL is <br><a href=" + sURL + ">" + sURL + "</a><br>Bookmark or share this link to access your saved machine.<br><span style='font-size: small; font-style: italic;'>Last saved at " + sTimestamp + "</span>", 1 );
-		
-	} else {
-		debug( 1, "Error: Save failed. Missing data or id from Github response." );
-		SetSaveMessage( "Save failed, sorry :(", 2 );
-	}
-}
-
-function saveErrorCallback( oData, sStatus, oRequestObj )
-{
-	debug( 1, "Error: Save failed. AJAX request to Github failed. HTTP response " + oRequestObj.status + " " + oRequestObj.statusText );
-	SetSaveMessage( "Save failed, sorry :(", 2 );
-}
-
-function SetSaveMessage( sStr, nBgFlash )
-{
-	$("#SaveStatusMsg").html( sStr );
-	$("#SaveStatus").slideDown();
-	if( nBgFlash ) {	/* Flash background of notification */
-		$("#SaveStatusBg").stop(true, true).css("background-color",(nBgFlash==1?"#88ee99":"#eb8888")).show().fadeOut(800);
-	}
-}
-
-function ClearSaveMessage()
-{
-	$("#SaveStatusMsg").empty();
-	$("#SaveStatus").hide();
 }
 
 function LoadSampleProgram( zName, zFriendlyName, bInitial )
@@ -841,42 +659,6 @@ function LoadSampleProgram( zName, zFriendlyName, bInitial )
 	ClearSaveMessage();
 }
 
-/* onchange function for textarea */
-function TextareaChanged()
-{
-	/* Update line numbers only if number of lines has changed */
-	var nNewLines = (oTextarea.value.match(/\n/g) ? oTextarea.value.match(/\n/g).length : 0) + 1;
-	if( nNewLines != nTextareaLines ) {
-		nTextareaLines = nNewLines
-		UpdateTextareaDecorations();
-	}
-	
-//	Compile();
-	bIsDirty = true;
-	oPrevInstruction = null;
-	RenderLineMarkers();
-}
-
-/* Generate line numbers for each line in the textarea */
-function UpdateTextareaDecorations()
-{
-	var oBackgroundDiv = $("#SourceBackground");
-	
-	oBackgroundDiv.empty();
-	
-	var sSource = oTextarea.value;
-	sSource = sSource.replace( /\r/g, "" );	/* Internet Explorer uses \n\r, other browsers use \n */
-	
-	var aLines = sSource.split("\n");
-	
-	for( var i = 0; i < aLines.length; i++)
-	{
-		oBackgroundDiv.append($("<div id='talinebg"+(i+1)+"' class='talinebg'><div class='talinenum'>"+(i+1)+"</div></div>"));
-	}
-	
-	UpdateTextareaScroll();
-}
-
 /* Highlight given lines as the next/previous tuple */
 /* next is a list of lines (to support nondeterministic TM), prev is a number */
 function SetActiveLines( next, prev )
@@ -920,25 +702,6 @@ function ClearErrorLines()
 	$(".talinebg").removeClass('talinebgerror');
 }
 
-/* Update the line numbers when textarea is scrolled */
-function UpdateTextareaScroll()
-{
-	var oBackgroundDiv = $("#SourceBackground");
-	
-	$(oBackgroundDiv).css( {'margin-top': (-1*$(oTextarea).scrollTop()) + "px"} );
-}
-
-
-function AboutMenuClicked( name )
-{
-	$(".AboutItem").css( "font-weight", "normal" );
-	$("#AboutItem" + name).css( "font-weight", "bold" );
-
-	$(".AboutContent").slideUp({queue: false, duration: 150}).fadeOut(150);
-	$("#AboutContent" + name ).stop().detach().prependTo("#AboutContentContainer").fadeIn({queue: false, duration: 150}).css("display", "none").slideDown(150);
-}
-
-
 /* OnLoad function for HTML body.  Initialise things when page is loaded. */
 function OnLoad()
 {
@@ -965,16 +728,6 @@ function OnLoad()
 	}
 }
 
-
-/* for testing */
-function testsave( success )
-{
-	if( success ) {
-		saveSuccessCallback( {id: "!!!WHACK!!!" + $.now(), url: "http://wha.ck/xxx"} );
-	} else {
-		saveErrorCallback( {id: "!!!WHACK!!!" + $.now(), url: "http://wha.ck/xxx"}, null, {status: -1, statusText: 'dummy'} );
-	}
-}
 
 /* return a string of n copies of c */
 function repeat( c, n )
