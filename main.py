@@ -1,4 +1,5 @@
 #Autor: Tharyck Vasconcelos
+
 PosicaoApontador = 0
 numPassos = 0
 maxVoltar = 0
@@ -6,6 +7,30 @@ listaVoltar=[]
 entrada = ""
 fita=""
 estados="0"
+
+def menu():
+	print ("Maquina de Turing")
+	print ("-----------------")
+	RecebeCodigo()
+
+def RecebeCodigo():
+	lercodigo = open('./codigo.txt', 'r')
+	codigo = lercodigo.readlines()
+	lercodigo.close()
+	AnalizaLinha(codigo)	
+
+#ler as linhas do arquivo recebido
+def AnalizaLinha(codigo):
+	novoCodigo = []
+	
+	#retirando comentarios
+	for i in range(len(codigo)):
+		if(codigo[i].startswith(";")):
+			pass
+		else:
+			novoCodigo.append(codigo[i])
+	return novoCodigo
+
 
 #cria uma fita finita
 def fita():
@@ -30,14 +55,55 @@ def passos():
 		inst=instrucao[0]
 	
 	if(instrucao != null):
-		novoEstado=instrucao.novoEstado == "*"
+		novoEstado
+		if(instrucao.novoEstado == "*"):
+			Estado = instrucao.novoEstado
+		
 		novoSimbolo
-
-
+		if (instrucao.novoSimbolo == "*"):
+			SimboloDoApontador = instrucao.novoSimbolo
+		acoes
+		if(instrucao.acao.toLowerCase() == "r"):
+			acoes=1
+		elif(instrucao.acao.toLowerCase() == "l"):
+			acoes=-1
+		else:
+			acoes=0		
+	
 	if(PosicaoApontador == 0 and Acoes == -1):
 		Acoes=0
+	else:
+		novoEstado = "halt"
+		novoSimbolo = SimboloDoApontador
+		acoes = 0
+		linhas = -1	
 
-	Linhas=instrucao.contaLinhas
+	if(maxVoltar > 0):
+		if(listaVoltar.length >= maxVoltar):
+			listaVoltar.shift()
+			listaVoltar.push(estado)
+
+  # if( nMaxUndo > 0 ) {
+  #   if( aUndoList.length >= nMaxUndo ) aUndoList.shift();
+  #   aUndoList.push({state: sEstados, position: nPosicaoCabeca, symbol: sSimboloDaCabeca});
+  # }
+
+	setSimboloFita(PosicaoApontador, NovoSimbolo)
+	estados = NovoEstado
+	PosicaoApontador += acoes
+	numPassos+1
+	maxVoltar = numPassos+1
+	PrevInstruction = instrucao
+
+	if(NovoEstado.toLowerCase() == "halt"):
+		if(instrucao != null):
+			return false
+	else:
+		if(instrucao.breakpoint):
+			return false
+		else:
+			return true
+	
 
 def voltar():
 	#remove o ultimo elemento da lista
@@ -65,10 +131,6 @@ def executar():
 def resetar():
 	fitaInicial = entrada[0].value
 	PosicaoApontador = fitaInicial.indexOf("*")
-
-
-def AnalizaLinha():
-	pass
 
 #refatorar
 def getInstrucao(estados, SimboloDoApontador):
@@ -107,6 +169,7 @@ def SetSiboloFita( element, c ):
 	else:
 		sFita = sFita.substr( 0, n - nTapeOffset ) + c + sFita.substr( n - nTapeOffset + 1 )
 
-# #refatorar
-def AnalizaLinha( sLine, nLineNum )
-	pass
+
+
+		
+menu()
