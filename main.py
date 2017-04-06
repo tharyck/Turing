@@ -25,7 +25,7 @@ def imprimeFita(fita, posicao):
 	apontador = [len(fita)]
 	print fita
 	apontador[posicao] ="|"
-	print apontador 
+	print apontador
 
 
 def main():
@@ -33,7 +33,6 @@ def main():
 	codigo = AnalizaEntrada(RecebeCodigo())
 	#cria uma fita com a entrada informada
 	fita  = criaFita(entrada = raw_input("Digite sua Entrada: "))
-
 	#cria a tabela de regras
 	for i in range(len(codigo)):
 		tabela.append(criaRegra(codigo[i]))
@@ -66,23 +65,34 @@ def AnalizaEntrada(codigo):
 			novoCodigo.append(codigo[i])
 	return novoCodigo
 
+
+def imprimeNovoCodigo(codigo):
+	for i in range(len(codigo)):
+		print codigo[i]
+
 #cria uma fita com a entrada informada
 def criaFita(entrada):
 	fita=[]
 	for i in range(len(entrada)):
 		fita.append(entrada[i])
+	fita.append("")
 	return fita
 
 #le cada linha do codigo e cria uma linha da tabela de regras
 def criaRegra(linha):
 	regra = []
-	regra.append(linha[0])
-	regra.append(linha[2])
-	regra.append(linha[4])
-	regra.append(linha[6])
-	regra.append(linha[8])
+
+	novalinha = linha.split(" ")
+	regra.append(novalinha[0])
+	regra.append(novalinha[1])
+	regra.append(novalinha[2])
+	regra.append(novalinha[3])
+	estado  = novalinha[4].rstrip()
+	regra.append(estado)
+	print regra
 	return regra
-	
+
+
 #recebe uma linha de regra
 def criaTabela(linha):
 	tabela = []
@@ -93,6 +103,10 @@ def escreveFita(fita, posicao, regra):
 	fita[posicao] = regra[2]
 	return fita
 
+def proximoElemento(fita, posicao, regra):
+	elemento = fita[posicao]
+
+	return
 def turing(regra, fita, posicao, passos):
 
 	if(posicao < 0):
@@ -105,36 +119,31 @@ def turing(regra, fita, posicao, passos):
 
 	#recebe o elemento onde esta o apontador
 	elemento = fita[posicao]
-	
 	fita = escreveFita(fita,posicao, regra)
-	imprimeFita(fita, posicao)
+	#imprimeFita(fita, posicao)
 	
 	#checa se o apontador se move para direita ou esquerda
 	if(regra[3] == "r"):
-		posicao += direita
+		posicao = posicao +1
 	elif(regra[3] == "l"):
-		posicao += esquerda
+		posicao = posicao - 1
 	else:
 		pass
-
 	#imprimeFita(novaFita, posicao)
 	novaRegra = procuraRegra(regra[4], elemento)
-	
 	#print imprimeFita(novaFita, posicao)
 	#adiciona um passo
-	passos+=1 
+	passos+=1
 	
 	#o proximo estado e o ultimo elemento da regra
 	proximoEstado = regra[4]
+	print proximoEstado
 
 	#o estado atual e o primeiro elemento da regra
 	estado = regra[0]
 
 	
-	proximaRegra = procuraRegra(str(regra[4]),str(regra[0]))
-
-	
-	#turing(procuraRegra, novaFita, posicao, passos)
+	turing(novaRegra, fita, posicao, passos)
 
 #procura a regra que corresponde ao estado passado e ao elemento lido
 def procuraRegra(estado, elemento):
@@ -142,45 +151,6 @@ def procuraRegra(estado, elemento):
 		#procura o estado passado e se existe o elemento para tal estado
 		if ((tabela[i][0] == str(estado)) and (tabela[i][1] == str(elemento))):
 			return tabela[i]
-
-#Funcion recursiva que lee la cinta en una de las
-#evaluaciones deseadas, regresa el resultado de la evaluacion
-#var "estado"= El estado actual de la maquina
-#var "lugar"= Lugar actual de la maquina
-#var "dic"= Diccionario que contine las reglas de la maquina
-#var "cinta"= Cinta en la que actualmente nos movemos
-#var "contador"= Contador del numero de veces
-#                 que se a llamado a la funcion.
-#var "unos"= La cantidad de unos que deberia de tener la cinta al final
-def leer(estado, lugar, dic,cinta, contador, unos):
-
-    contador += 1    #Aumentamos en 1 el contador
-    valor = cinta[lugar]    #El valor en el lugar actual de la cinta
-    llave = str(estado) + str(valor)   #Llave para el diccionario
-
-    #Clausula de escape
-    if not llave in dic:
-        #Si la llave no se encuntra en el diccionario
-        #procedemos a verificar si la cantidad de unos es correcta.
-        contar(cinta, unos)
-        return
-
-    rules = dic[llave] #Obtenemos las reglas de la cinta
-    cinta[lugar] = int(rules[1]) #Actualizamos el valor
-    estado = rules[0] #Actualizamos el estado
-
-    #Verificaremos hacia que direccion se movera lugar
-    if rules[2] == "R":
-        #Movemos a la derecha el lugar
-        lugar += 1
-    else:
-        #Movemos a la izquierda el lugar
-        lugar -= 1
-
-    #Hacemos la llamada recursivo de la funcion
-    leer(estado, lugar, dic,
-         cinta, contador, unos)
-
 
 		
 main()
