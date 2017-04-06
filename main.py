@@ -1,175 +1,166 @@
 #Autor: Tharyck Vasconcelos
 
-PosicaoApontador = 0
-numPassos = 0
-maxVoltar = 0
-listaVoltar=[]
 entrada = ""
-fita=""
-estados="0"
+#tabela de regras da maquina
+tabela = []
+#posicao atual do apontador
+posicao = 0
+#estado atual
+estadoAtual = 0
+#
+proximoEstado = 0
+#quantidade de passos dados
+passos = 0
+#mover para direita
+direita = 1
+#mover para esquerda
+esquerda = -1
 
-def menu():
-	print ("Maquina de Turing")
-	print ("-----------------")
-	RecebeCodigo()
+fita = []
 
+def main():
+	#recebe oarquivo texto com o codigo
+	codigo = AnalizaEntrada(RecebeCodigo())
+	#cria uma fita com a entrada informada
+	fita  = criaFita(entrada = raw_input("Digite sua Entrada: "))
+
+	#cria a tabela de regras
+	for i in range(len(codigo)):
+		tabela.append(criaRegra(codigo[i]))
+
+	print tabela
+	elemento = fita[posicao]
+
+	#chama procura regra
+	regra = procuraRegra(estadoAtual, elemento)
+	print regra
+
+
+#recebe um arquivo texto como entrada
 def RecebeCodigo():
 	lercodigo = open('./codigo.txt', 'r')
 	codigo = lercodigo.readlines()
 	lercodigo.close()
-	AnalizaLinha(codigo)	
+	return codigo
 
-#ler as linhas do arquivo recebido
-def AnalizaLinha(codigo):
+#ler as linhas do arquivo recebido e remove comentarios
+def AnalizaEntrada(codigo):
 	novoCodigo = []
 	
 	#retirando comentarios
 	for i in range(len(codigo)):
-		if(codigo[i].startswith(";")):
+		if(codigo[i].startswith(";") or (len(codigo[i]) <= 4)):
 			pass
 		else:
 			novoCodigo.append(codigo[i])
 	return novoCodigo
 
-
-#cria uma fita finita
-def fita():
+#cria uma fita com a entrada informada
+def criaFita(entrada):
 	fita=[]
-	for i in range(0,300):
-		fita.append(0)
+	for i in range(len(entrada)):
+		fita.append(entrada[i])
 	return fita
 
-def passos():
-	novoEstado
-	novoSimbolo
-	Acoes
-	Linhas
-	SimboloDoApontador= getSimboloFita(PosicaoApontador)
-	instrucao= getInstrucao(Estado, SimboloDoApontador)
-	inst
-
-	#se a instrucao tiver tamanho zero, torna o elemento inst null, senao inst sera a posicao zero
-	if(instrucao.length == 0):
-		inst=null
-	else:
-		inst=instrucao[0]
+#le cada linha do codigo e cria uma linha da tabela de regras
+def criaRegra(linha):
+	regra = []
+	regra.append(linha[0])
+	regra.append(linha[2])
+	regra.append(linha[4])
+	regra.append(linha[6])
+	regra.append(linha[8])
+	return regra
 	
-	if(instrucao != null):
-		novoEstado
-		if(instrucao.novoEstado == "*"):
-			Estado = instrucao.novoEstado
-		
-		novoSimbolo
-		if (instrucao.novoSimbolo == "*"):
-			SimboloDoApontador = instrucao.novoSimbolo
-		acoes
-		if(instrucao.acao.toLowerCase() == "r"):
-			acoes=1
-		elif(instrucao.acao.toLowerCase() == "l"):
-			acoes=-1
+#recebe uma linha de regra
+def criaTabela(linha):
+	tabela = []
+	tabela.append(linha)
+
+#metodo que escreve na fita e apresenta o resultado
+def escreveFita(fita, posicao, regra):
+	fita[posicao] = regra[4]
+	pass
+
+def turing(regra, fita, posicao, passos):
+
+	if(posicao<0):
+		print "ERRO, Posicao < 0"
+	if (passos > 1000):
+		print 
+
+	elemento = fita[posicao]
+	procuraRegra(regra, proximoElemento)
+	
+	
+	passos+=1 #adiciona um passo
+	
+	#o proximo estado e o ultimo elemento da regra
+	proximoEstado = regra[8]
+
+	#o estado atual e o primeiro elemento da regra
+	estado = regra[0]
+
+	#indica para onde o apontador se movera
+	if(regra[6] == "r"):
+		posicao += direita
+	elif(regra[6] == "l"):
+		posicao += esquerda
+	else:
+		pass
+
+	proximaRegra = procuraRegra(estadoAtual[8],estadoAtual[6])
+	turing(procuraRegra, fita, posicao, passos)
+
+	pass
+
+#procura a regra que corresponde ao estado passado e ao elemento lido
+def procuraRegra(estado, elemento):
+	for i in range(len(tabela)):
+		if ((tabela[i][0] == str(estado)) and (tabela[i][2] == str(elemento))):
+			print "ok"
+			return tabela[i]
 		else:
-			acoes=0		
-	
-	if(PosicaoApontador == 0 and Acoes == -1):
-		Acoes=0
-	else:
-		novoEstado = "halt"
-		novoSimbolo = SimboloDoApontador
-		acoes = 0
-		linhas = -1	
+			pass
 
-	if(maxVoltar > 0):
-		if(listaVoltar.length >= maxVoltar):
-			listaVoltar.shift()
-			listaVoltar.push(estado)
+#Funcion recursiva que lee la cinta en una de las
+#evaluaciones deseadas, regresa el resultado de la evaluacion
+#var "estado"= El estado actual de la maquina
+#var "lugar"= Lugar actual de la maquina
+#var "dic"= Diccionario que contine las reglas de la maquina
+#var "cinta"= Cinta en la que actualmente nos movemos
+#var "contador"= Contador del numero de veces
+#                 que se a llamado a la funcion.
+#var "unos"= La cantidad de unos que deberia de tener la cinta al final
+def leer(estado, lugar, dic,cinta, contador, unos):
 
-  # if( nMaxUndo > 0 ) {
-  #   if( aUndoList.length >= nMaxUndo ) aUndoList.shift();
-  #   aUndoList.push({state: sEstados, position: nPosicaoCabeca, symbol: sSimboloDaCabeca});
-  # }
+    contador += 1    #Aumentamos en 1 el contador
+    valor = cinta[lugar]    #El valor en el lugar actual de la cinta
+    llave = str(estado) + str(valor)   #Llave para el diccionario
 
-	setSimboloFita(PosicaoApontador, NovoSimbolo)
-	estados = NovoEstado
-	PosicaoApontador += acoes
-	numPassos+1
-	maxVoltar = numPassos+1
-	PrevInstruction = instrucao
+    #Clausula de escape
+    if not llave in dic:
+        #Si la llave no se encuntra en el diccionario
+        #procedemos a verificar si la cantidad de unos es correcta.
+        contar(cinta, unos)
+        return
 
-	if(NovoEstado.toLowerCase() == "halt"):
-		if(instrucao != null):
-			return false
-	else:
-		if(instrucao.breakpoint):
-			return false
-		else:
-			return true
-	
+    rules = dic[llave] #Obtenemos las reglas de la cinta
+    cinta[lugar] = int(rules[1]) #Actualizamos el valor
+    estado = rules[0] #Actualizamos el estado
 
-def voltar():
-	#remove o ultimo elemento da lista
-	voltar = listaVoltar.pop()
+    #Verificaremos hacia que direccion se movera lugar
+    if rules[2] == "R":
+        #Movemos a la derecha el lugar
+        lugar += 1
+    else:
+        #Movemos a la izquierda el lugar
+        lugar -= 1
 
-	#testa se voltar nao e vazio
-	if(voltar.length > 0):
-		#subtrai um passo
-		numPassos-1
-		#numero maximo de voltas e igual ao novo numero de passos
-		maxVoltar=numPassos+1
-		#estado atual e o estado da lista voltar
-		Estado=voltar.Estado
-		#apontador esta na posicao de voltar
-		PosicaoApontador=voltar.PosicaoApontador
-		#seta o simbolo da fita
-		setSimboloFita(PosicaoApontador,voltar.simbolo)
-
-def executar():
-	#corrigir
-	while(entrada().length > 0):
-		passos()
-	
-
-def resetar():
-	fitaInicial = entrada[0].value
-	PosicaoApontador = fitaInicial.indexOf("*")
-
-#refatorar
-def getInstrucao(estados, SimboloDoApontador):
-	if((aProgram[estados] != null) and (aProgram[estados][SimboloDoApontador] != null)):
-		return(aProgram[estados][SimboloDoApontador])
-	elif( aProgram[estados] != null and aProgram[estados]["*"] != null ):
-		return( aProgram[estados]["*"] )
-	elif( aProgram["*"] != null and aProgram["*"][SimboloDoApontador] != null ):
-		return( aProgram["*"][SimboloDoApontador] );
-	elif( aProgram["*"] != null and aProgram["*"]["*"] != null ):
-		return( aProgram["*"]["*"] );
-	else:
-		return([])
-
-#recebe o simbolo da fita
-def getSimboloFita(element):
-	#se o elemento for menor do que 
-	if((element < nTapeOffset) or (element >= sFita.length + nTapeOffset)):
-		return ("_")
-	else:
-		c = sFita.charAt( element - nTapeOffset )
-		if( c == " " ): 
-			c = "_"
-	return c
-
-#refatorar
-def SetSiboloFita( element, c ):
-	if( c == " " ):
-		c = "_"
-	
-	if( n < nTapeOffset ):
-		sFita = c + repeat( "_", nTapeOffset - n - 1 ) + sFita;
-		nTapeOffset = n
-	elif( n > nTapeOffset + sFita.length ):
-		sFita = sFita + repeat( "_", nTapeOffset + sFita.length - n - 1 ) + c
-	else:
-		sFita = sFita.substr( 0, n - nTapeOffset ) + c + sFita.substr( n - nTapeOffset + 1 )
-
+    #Hacemos la llamada recursivo de la funcion
+    leer(estado, lugar, dic,
+         cinta, contador, unos)
 
 
 		
-menu()
+main()
